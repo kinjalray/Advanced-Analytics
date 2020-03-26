@@ -5,7 +5,7 @@ This is a repository of assignments completed in my Advanced Analytics class at 
 
 Skills Covered:
 - Data Visualization
-- Predicitve Analytics
+- Predictve Analytics
 - Prescriptive Analytics
 
 
