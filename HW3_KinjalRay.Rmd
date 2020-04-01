@@ -1,0 +1,121 @@
+---
+title: "HW3_KinjalRay"
+author: "Kinjal"
+date: "10/17/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+citibike <- read.csv("citibike.csv")
+View(citibike)
+```
+
+##Q1
+
+Males, on average, have shorter durations.
+Males, on average, travel longer distances.
+
+```{r}
+tapply(citibike$tripduration, citibike$gender, mean, na.rm = TRUE)[-1]
+
+library("geosphere")
+
+citibike$distance = distHaversine(citibike[ ,c("start.station.longitude", "start.station.latitude")],citibike[ ,c("end.station.longitude", "end.station.latitude")])
+
+tapply(citibike$distance, citibike$gender, mean, na.rm = TRUE)[-1]
+
+```
+
+
+
+```{r}
+citibike$weekday <- factor(weekdays(as.Date(citibike$starttime, format = "%m/%d/%Y")), levels = c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"))
+```
+
+
+```{r results='hide'}
+as.POSIXlt(citibike$starttime, format = "%m/%d/%Y %H:%M")
+
+citibike$hourtime <- format(as.POSIXct(strptime(citibike$starttime,"%d/%m/%Y %H:%M",tz="")) ,format = "%H")
+
+citibike$hourtime <- as.integer(citibike$hourtime)
+#citibike$hourtime[is.na(citibike$hourtime)] <- 30
+unique(citibike$hourtime)
+
+```
+
+
+
+##Q2
+
+  On weekdays, most traffic occurs, in the 7:30 AM - 10:00 AM and 3:00 PM - 6:00 PM ranges. On weekends, traffic is pretty consistent throughout the day, from 7:30 AM to 5:30 PM.
+  
+  
+```{r}
+citibike$weekend <- ifelse(citibike$weekday == "Monday" | citibike$weekday == "Tuesday" |citibike$weekday == "Wednesday" |citibike$weekday == "Thursday" |citibike$weekday == "Friday", "Weekday", "Weekend")
+
+citibike$timeOfDay <- ifelse(citibike$hourtime >= 04 & citibike$hourtime < 12, "Morning",ifelse(citibike$hourtime >= 12 & citibike$hourtime < 16, "Afternoon", ifelse(citibike$hourtime >= 16 & citibike$hourtime < 24, "Evening", "After Hours")))
+
+library(ggplot2)
+
+ggplot(citibike, aes(citibike$timeOfDay)) + geom_bar() + labs(x = "Time of Day")
+ggplot(citibike, aes(citibike$weekday)) + geom_bar() + labs(x = "Weekday")
+ggplot(citibike, aes(citibike$weekday, citibike$hourtime, colour = citibike$weekend)) + geom_violin() + labs(x = "Weekday", y = "Traffic by Hour", colour = "Key")
+```
+ 
+
+
+##Q3
+
+  In the morning: 8 Ave & W 31 St and W 41 St & 8 Ave are most popular
+  In the afternoon: 1 Ave & E 15 St and 1 Ave & E 44 St are most popular
+  In the evening: E 43 St & Vanderbilt Ave and Lafayette St & E 8 St are most popular
+  In the after hours: Allen St & E Houston St and Lafayette St & E 8 St are most popular
+  
+```{r}
+library(plyr)
+
+busystation <- tapply(citibike$start.station.name, citibike$timeOfDay, count)
+
+Morning <- as.data.frame(busystation$Morning)
+Morning <- Morning[order(Morning$freq, decreasing = TRUE), ]
+head(Morning, 5)
+
+Afternoon <- as.data.frame(busystation$Afternoon)
+Afternoon <- Afternoon[order(Morning$freq, decreasing = TRUE), ]
+head(Afternoon, 5)
+
+Evening <- as.data.frame(busystation$Evening)
+Evening <- Evening[order(Evening$freq, decreasing = TRUE), ]
+head(Evening, 5)
+
+afterHours <- as.data.frame(busystation$`After Hours`)
+afterHours <- afterHours[order(afterHours$freq, decreasing = TRUE), ]
+head(afterHours, 5)
+```
+
+
+##Q4
+
+I wanted to explore how the age of the user affects the time of day they use the bikes. First, I found it questionable that there were users who were born in 1899 using bikes in 2015. That means they are over 115 years old! 
+
+I noticed younger demographics use bikes during morning and afternoon rush hour. I'm assuming these populations use the bikes to complete their work commutes. The older group of 65-90 years old use the bikes consistently throughout the day. Though I find the data a bit questionable for those 90 years and older, it is interesting how none use the bikes before 7 AM.
+
+When splitting the data further by weekday, the oldest generation are extremely volatile in usage patterns, whereas the workforce generations remained relatively consistent.
+```{r}
+citibike$demographic <- ifelse(citibike$birth.year >= 1900 & citibike$birth.year < 1925, "90 years or older old",ifelse(citibike$birth.year >= 1925 & citibike$birth.year < 1950, "90 to 65 years", ifelse(citibike$birth.year >= 1950 & citibike$birth.year < 1975, "65 to 30 years", "30 years or younger")))
+
+ggplot(citibike, aes(citibike$demographic, citibike$hourtime, colour = citibike$demographic)) + geom_violin() + labs(x = "Age", y = "Hour of the Day", colour = "Key") 
+
+ggplot(citibike, aes(citibike$demographic, citibike$hourtime, colour = citibike$demographic)) + geom_violin() + labs(x = "Age", y = "Hour of the Day", colour = "Key") + facet_wrap(~ citibike$weekday)
+
+```
+
+
+
+
+
