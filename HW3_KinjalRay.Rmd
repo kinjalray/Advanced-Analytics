@@ -34,6 +34,7 @@ tapply(citibike$distance, citibike$gender, mean, na.rm = TRUE)[-1]
 
 ```{r}
 citibike$weekday <- factor(weekdays(as.Date(citibike$starttime, format = "%m/%d/%Y")), levels = c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"))
+
 ```
 
 
@@ -43,8 +44,6 @@ as.POSIXlt(citibike$starttime, format = "%m/%d/%Y %H:%M")
 citibike$hourtime <- format(as.POSIXct(strptime(citibike$starttime,"%d/%m/%Y %H:%M",tz="")) ,format = "%H")
 
 citibike$hourtime <- as.integer(citibike$hourtime)
-#citibike$hourtime[is.na(citibike$hourtime)] <- 30
-unique(citibike$hourtime)
 
 ```
 
@@ -52,17 +51,20 @@ unique(citibike$hourtime)
 
 ##Q2
 
-  On weekdays, most traffic occurs, in the 7:30 AM - 10:00 AM and 3:00 PM - 6:00 PM ranges. On weekends, traffic is pretty consistent throughout the day, from 7:30 AM to 5:30 PM.
-  
-  
+On weekdays, most traffic occurs, in the 7:30 AM - 10:00 AM and 3:00 PM - 6:00 PM ranges. On weekends, traffic is pretty consistent throughout the day, from 7:30 AM to 5:30 PM.
 ```{r}
 citibike$weekend <- ifelse(citibike$weekday == "Monday" | citibike$weekday == "Tuesday" |citibike$weekday == "Wednesday" |citibike$weekday == "Thursday" |citibike$weekday == "Friday", "Weekday", "Weekend")
 
-citibike$timeOfDay <- ifelse(citibike$hourtime >= 04 & citibike$hourtime < 12, "Morning",ifelse(citibike$hourtime >= 12 & citibike$hourtime < 16, "Afternoon", ifelse(citibike$hourtime >= 16 & citibike$hourtime < 24, "Evening", "After Hours")))
+citibike1 <- subset(citibike, !is.na(hourtime))
+
+citibike1$timeOfDay <- ifelse(citibike1$hourtime >= 04 & citibike1$hourtime < 12, "Morning",ifelse(citibike1$hourtime >= 12 & citibike1$hourtime < 16, "Afternoon", ifelse(citibike1$hourtime >= 16 & citibike1$hourtime < 24, "Evening", "After Hours")))
 
 library(ggplot2)
 
-ggplot(citibike, aes(citibike$timeOfDay)) + geom_bar() + labs(x = "Time of Day")
+unique(citibike1$timeOfDay)
+
+ggplot(citibike1, aes(timeOfDay, colour = "color")) + geom_bar() + labs(x = "Time of Day") + ggtitle("Bikes in Use by Time of Day") + theme(plot.title = element_text(hjust = 0.5))
+       
 ggplot(citibike, aes(citibike$weekday)) + geom_bar() + labs(x = "Weekday")
 ggplot(citibike, aes(citibike$weekday, citibike$hourtime, colour = citibike$weekend)) + geom_violin() + labs(x = "Weekday", y = "Traffic by Hour", colour = "Key")
 ```
